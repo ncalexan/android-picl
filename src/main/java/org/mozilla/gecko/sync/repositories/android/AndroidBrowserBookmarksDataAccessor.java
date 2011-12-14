@@ -42,7 +42,15 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
     cv.put(BrowserContract.Bookmarks.POSITION, position);
     updateByGuid(guid, cv);
   } 
-  
+
+  private long insertSpecialFolder(String guid, long parentId) {
+      BookmarkRecord record = new BookmarkRecord(guid);
+      record.title = DBUtils.SPECIAL_GUIDS_MAP.get(guid);
+      record.type = "folder";
+      record.androidParentID = parentId;
+      return(DBUtils.getAndroidIdFromUri(insert(record)));
+  }
+
   /*
    * Verify that all special guids are present and that they aren't set to deleted.
    * Inser them if they aren't there.
@@ -60,7 +68,7 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
         mobileRoot = RepoUtils.getLongFromCursor(cur, BrowserContract.CommonColumns._ID);
       }
       count++;
-      
+
       // Make sure none of these folders are marked as deleted
       if (RepoUtils.getLongFromCursor(cur, BrowserContract.SyncColumns.IS_DELETED) == 1) {
         ContentValues cv = new ContentValues();
@@ -121,13 +129,6 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
     }
   }
 
-  private long insertSpecialFolder(String guid, long parentId) {
-      BookmarkRecord record = new BookmarkRecord(guid);
-      record.title = DBUtils.SPECIAL_GUIDS_MAP.get(guid);
-      record.type = "folder";
-      record.androidParentID = parentId;
-      return(DBUtils.getAndroidIdFromUri(insert(record)));
-  }
 
   @Override
   protected ContentValues getContentValues(Record record) {
