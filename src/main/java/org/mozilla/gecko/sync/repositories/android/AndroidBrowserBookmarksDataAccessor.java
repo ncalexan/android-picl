@@ -43,53 +43,6 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
     updateByGuid(guid, cv);
   } 
 
-  private long insertSpecialFolder(String guid, long parentId) {
-      BookmarkRecord record = new BookmarkRecord(guid);
-      record.title = DBUtils.SPECIAL_GUIDS_MAP.get(guid);
-      record.type = "folder";
-      record.androidParentID = parentId;
-      return(DBUtils.getAndroidIdFromUri(insert(record)));
-  }
-
-  /*
-   * Verify that all special guids are present and that they aren't set to deleted.
-   * Inser them if they aren't there.
-   */
-  public void checkAndBuildSpecialGuids() throws NullCursorException {
-    Cursor cur = fetch(RepoUtils.SPECIAL_GUIDS);
-    cur.moveToFirst();
-    int count = 0;
-    boolean containsMobileFolder = false;
-    long mobileRoot = 0;
-    while (!cur.isAfterLast()) {
-      String guid = RepoUtils.getStringFromCursor(cur, BrowserContract.SyncColumns.GUID);
-      if (guid.equals("mobile")) {
-        containsMobileFolder = true;
-        mobileRoot = RepoUtils.getLongFromCursor(cur, BrowserContract.CommonColumns._ID);
-      }
-      count++;
-
-      // Make sure none of these folders are marked as deleted
-      if (RepoUtils.getLongFromCursor(cur, BrowserContract.SyncColumns.IS_DELETED) == 1) {
-        ContentValues cv = new ContentValues();
-        cv.put(BrowserContract.SyncColumns.IS_DELETED, 0);
-        updateByGuid(guid, cv);
-      }
-      cur.moveToNext();
-    }
-    cur.close();
-    
-    // Insert them if missing
-    if (count != RepoUtils.SPECIAL_GUIDS.length) {
-      if (!containsMobileFolder) {
-        mobileRoot = insertSpecialFolder("mobile", 0);
-      }
-      long desktop = insertSpecialFolder("places", mobileRoot);
-      insertSpecialFolder("unfiled", desktop);
-      insertSpecialFolder("menu", desktop);
-      insertSpecialFolder("toolbar", desktop);
-    }
-  }
 
   private long insertSpecialFolder(String guid, long parentId) {
       BookmarkRecord record = new BookmarkRecord(guid);
@@ -104,21 +57,21 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
     // TODO mobile should always exist as the root,
     // remove this once that is true.
 
-    Cursor cur = fetch(DBUtils.SPECIAL_GUIDS);
+    Cursor cur = fetch(RepoUtils.SPECIAL_GUIDS);
     cur.moveToFirst();
     int count = 0;
     boolean containsMobileFolder = false;
     long mobileRoot = 0;
     while (!cur.isAfterLast()) {
-      if (DBUtils.getStringFromCursor(cur, BrowserContract.Bookmarks.GUID).equals("mobile")) {
+      if (RepoUtils.getStringFromCursor(cur, BrowserContract.Bookmarks.GUID).equals("mobile")) {
         containsMobileFolder = true;
-        mobileRoot = DBUtils.getLongFromCursor(cur, BrowserContract.CommonColumns._ID);
+        mobileRoot = RepoUtils.getLongFromCursor(cur, BrowserContract.CommonColumns._ID);
       }
       count++;
       cur.moveToNext();
     }
     cur.close();
-    if (count != DBUtils.SPECIAL_GUIDS.length) {
+    if (count != RepoUtils.SPECIAL_GUIDS.length) {
       if (!containsMobileFolder) {
         mobileRoot = insertSpecialFolder("mobile", 0);
       }
