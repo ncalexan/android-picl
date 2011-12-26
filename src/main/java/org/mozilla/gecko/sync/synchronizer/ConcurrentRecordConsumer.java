@@ -64,12 +64,10 @@ class ConcurrentRecordConsumer extends RecordConsumer {
   }
 
   private static void info(String message) {
-    System.out.println(LOG_TAG + "::INFO: " + message);
     Log.i(LOG_TAG, message);
   }
 
   private static void debug(String message) {
-    System.out.println(LOG_TAG + ":: DEBUG: " + message);
     Log.d(LOG_TAG, message);
   }
 
