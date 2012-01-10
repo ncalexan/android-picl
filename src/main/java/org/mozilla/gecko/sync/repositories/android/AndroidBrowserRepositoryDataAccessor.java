@@ -183,27 +183,41 @@ public abstract class AndroidBrowserRepositoryDataAccessor {
   public Cursor fetch(String guids[]) throws NullCursorException {
     String where = "guid" + " in (";
     for (String guid : guids) {
-      where = where + "'" + guid + "', ";
+      where = where + "?, ";
     }
     where = (where.substring(0, where.length() -2) + ")");
     queryStart = System.currentTimeMillis();
-    Cursor cur = context.getContentResolver().query(getUri(), getAllColumns(), where, null, null);
+    Cursor cur = context.getContentResolver().query(getUri(), getAllColumns(), where, guids, null);
     queryEnd = System.currentTimeMillis();
     RepoUtils.queryTimeLogger(LOG_TAG + ".fetch", queryStart, queryEnd);
     if (cur == null) {
       Log.e(LOG_TAG, "Got null cursor exception in AndroidBrowserRepositoryDataAccessor.fetch");
       throw new NullCursorException(null);
+    } else if (cur.getCount() != guids.length) {
+      Log.w(LOG_TAG, "Unexpectedly found " + cur.getCount() + " rows instead of one for each of " + guids.length + " guids.");
     }
     return cur;
   }
 
   public void delete(Record record) {
-    context.getContentResolver().delete(getUri(),
-         BrowserContract.SyncColumns.GUID + " = '" + record.guid +"'", null);
+    String[] args = new String[] { record.guid };
+    String where  = BrowserContract.SyncColumns.GUID + " = ?";
+
+    int deleted = context.getContentResolver().delete(getUri(), where, args);
+    if (deleted == 1) {
+      return;
+    }
+    Log.w(LOG_TAG, "Unexpectedly deleted " + deleted + " rows for guid " + record.guid);
   }
 
   public void updateByGuid(String guid, ContentValues cv) {
-    context.getContentResolver().update(getUri(), cv,
-        BrowserContract.SyncColumns.GUID + " = '" + guid +"'", null);
+    String[] args = new String[] { guid };
+    String where  = BrowserContract.SyncColumns.GUID + " = ?";
+
+    int updated = context.getContentResolver().update(getUri(), cv, where, args);
+    if (updated == 1) {
+      return;
+    }
+    Log.w(LOG_TAG, "Unexpectedly updated " + updated + " rows for guid " + guid);
   }
 }
