@@ -36,6 +36,7 @@ public class TestAnnouncementFetch {
   private static final String TEST_USER_AGENT = "TEST USER AGENT";
   private static final String BASE_PATH   = "/announce/";
   private static final String BASE_URI    = TEST_SERVER + BASE_PATH + AnnouncementsConstants.ANNOUNCE_PATH_SUFFIX;
+  private static final long MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
   private HTTPServerTestHelper data = new HTTPServerTestHelper();
 
@@ -393,5 +394,25 @@ public class TestAnnouncementFetch {
     } finally {
       data.stopHTTPServer();
     }
+  }
+
+  /**
+   * Test helper for {@link AnnouncementsFetcher#getIdleDays(long)}.
+   */
+  private static class IdleFetcher extends AnnouncementsFetcher {
+    public static int getIdleDaysRelative(final long age) {
+      final long lastLaunch = System.currentTimeMillis() - age;
+      return getIdleDays(lastLaunch);
+    }
+  }
+
+  @SuppressWarnings("static-method")
+  @Test
+  public void testIdleDays() {
+    Assert.assertEquals(0, IdleFetcher.getIdleDaysRelative(0));
+    Assert.assertEquals(0, IdleFetcher.getIdleDaysRelative(MILLISECONDS_PER_DAY - 1));
+    Assert.assertEquals(1, IdleFetcher.getIdleDaysRelative(MILLISECONDS_PER_DAY));
+    Assert.assertEquals(1, IdleFetcher.getIdleDaysRelative(MILLISECONDS_PER_DAY + 1));
+    Assert.assertEquals(2, IdleFetcher.getIdleDaysRelative(2 * MILLISECONDS_PER_DAY + 1));
   }
 }
